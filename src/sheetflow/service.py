@@ -34,6 +34,19 @@ class TaskReport:
         return bool(self.failures)
 
 
+@dataclass
+class PreviewReport:
+    frame: pd.DataFrame
+    input_count: int
+    success_count: int
+    skipped_count: int
+    before_rows: int
+    after_rows: int
+    before_columns: list[str]
+    after_columns: list[str]
+    failures: list[dict[str, str]] = field(default_factory=list)
+
+
 def resolve_inputs(patterns: list[str]) -> list[Path]:
     found: list[Path] = []
     for raw in patterns:
@@ -60,6 +73,54 @@ def run_workflow(
     cancelled: Cancelled | None = None,
 ) -> TaskReport:
     started = time.monotonic()
+    report = TaskReport()
+    frame, report, _, _ = _transform(config, progress=progress, cancelled=cancelled)
+
+    _check_cancelled(cancelled)
+    split = next((op for op in config.operations if op.type == "split_by"), None)
+    if split:
+        column = split.params().get("column")
+        if column not in frame.columns:
+            raise OperationError(f"拆分列不存在：{column}")
+        base = Path(config.output.path)
+        for value, part in frame.groupby(column, dropna=False):
+            safe = re.sub(r'[<>:"/\\|?*]+', "_", str(value))[:80] or "空值"
+            output = base.with_name(f"{base.stem}_{safe}{base.suffix}")
+            report.output_paths.append(
+                export_table(part.reset_index(drop=True), config.output, output)
+            )
+    else:
+        report.output_paths.append(export_table(frame, config.output))
+
+    report.rows = len(frame)
+    report.elapsed_seconds = time.monotonic() - started
+    if progress:
+        progress(100, "处理完成")
+    return report
+
+
+def preview_workflow(config: WorkflowConfig, limit: int = 100) -> PreviewReport:
+    """执行同一套读取和处理逻辑，但不写入任何输出文件。"""
+    frame, report, before_rows, before_columns = _transform(config)
+    return PreviewReport(
+        frame=frame.head(limit).copy(),
+        input_count=report.input_count,
+        success_count=report.success_count,
+        skipped_count=report.skipped_count,
+        before_rows=before_rows,
+        after_rows=len(frame),
+        before_columns=before_columns,
+        after_columns=[str(column) for column in frame.columns],
+        failures=report.failures.copy(),
+    )
+
+
+def _transform(
+    config: WorkflowConfig,
+    *,
+    progress: Progress | None = None,
+    cancelled: Cancelled | None = None,
+) -> tuple[pd.DataFrame, TaskReport, int, list[str]]:
     report = TaskReport()
     paths = resolve_inputs(config.input.paths)
     report.input_count = len(paths)
@@ -94,35 +155,19 @@ def run_workflow(
         raise InputFileError("所有输入文件均读取失败")
     _check_cancelled(cancelled)
     frame = pd.concat(frames, ignore_index=True, sort=False)
+    before_rows = len(frame)
+    before_columns = [str(column) for column in frame.columns]
 
     operations = [op for op in config.operations if op.type not in {"merge", "split_by"}]
     for index, operation in enumerate(operations, 1):
         _check_cancelled(cancelled)
         if progress:
-            progress(55 + int(index / max(len(operations), 1) * 30), f"正在执行：{operation.type}")
-        frame = apply_operation(frame, operation.type, operation.params())
-
-    _check_cancelled(cancelled)
-    split = next((op for op in config.operations if op.type == "split_by"), None)
-    if split:
-        column = split.params().get("column")
-        if column not in frame.columns:
-            raise OperationError(f"拆分列不存在：{column}")
-        base = Path(config.output.path)
-        for value, part in frame.groupby(column, dropna=False):
-            safe = re.sub(r'[<>:"/\\|?*]+', "_", str(value))[:80] or "空值"
-            output = base.with_name(f"{base.stem}_{safe}{base.suffix}")
-            report.output_paths.append(
-                export_table(part.reset_index(drop=True), config.output, output)
+            progress(
+                55 + int(index / max(len(operations), 1) * 30),
+                f"正在执行：{operation.type}",
             )
-    else:
-        report.output_paths.append(export_table(frame, config.output))
-
-    report.rows = len(frame)
-    report.elapsed_seconds = time.monotonic() - started
-    if progress:
-        progress(100, "处理完成")
-    return report
+        frame = apply_operation(frame, operation.type, operation.params())
+    return frame, report, before_rows, before_columns
 
 
 def _check_cancelled(cancelled: Cancelled | None) -> None:

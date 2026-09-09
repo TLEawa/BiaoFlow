@@ -2,7 +2,7 @@
 
 SheetFlow 是一个离线优先的 Excel/CSV 自动化工具，面向需要重复合并、清洗、筛选和汇总表格的个人与小团队。
 
-> 当前版本：0.1.0。文件默认只在本机处理，不上传、不包含遥测。
+> 当前版本：0.2.0。文件默认只在本机处理，不上传、不包含遥测。
 
 ## 功能
 
@@ -13,6 +13,9 @@ SheetFlow 是一个离线优先的 Excel/CSV 自动化工具，面向需要重�
 - CSV/XLSX 安全导出，默认禁止覆盖
 - 可保存、校验并复用的 YAML 工作流
 - 中文桌面 GUI 与统一的 CLI 核心
+- 用中文描述自动生成可编辑的处理步骤（本地规则解析）
+- 电商订单、客户名单、考勤表和通用清洗模板
+- 执行前真实预览，显示处理前后的行数与列数变化
 
 ## 5 分钟快速开始
 
@@ -33,12 +36,32 @@ python -m venv .venv
 
 Windows 发行包用户可直接运行 `SheetFlow.exe`，无需安装 Python。
 
+## 用一句话创建流程
+
+GUI 中先添加文件，再输入：
+
+> 合并文件并保留来源，按手机号去重，再按城市拆分
+
+点击“从描述生成步骤”后，SheetFlow 会依据实际列名生成可编辑步骤。
+未能确定的列会明确提示，不会猜测。点击“预览前 100 行”可以在写文件前
+查看真实处理结果。
+
+命令行也可以生成工作流：
+
+```powershell
+sheetflow suggest orders.csv "按订单号去重，再按城市拆分" --save workflow.yaml
+```
+
+> 这一版的“智能创建”是可预期、可复核的本地规则解析器，不是云端大模型，
+> 不需要 API Key，也不会上传表格。
+
 ## CLI 示例
 
 ```powershell
 sheetflow inspect input.xlsx
 sheetflow validate workflow.yaml
 sheetflow merge a.csv b.xlsx --output result.xlsx --add-source
+sheetflow suggest input.xlsx "删除空行，按手机号去重" --save workflow.yaml
 sheetflow run workflow.yaml
 sheetflow gui
 ```
@@ -73,6 +96,8 @@ output:
 - 默认不联网；日志不会记录完整表格内容。
 - 当前支持 `.csv` 和 `.xlsx`，暂不支持旧式 `.xls`、密码文件、VBA、图表编辑和云端协作。
 - 大文件受本机可用内存限制；GUI 预览最多显示 100 行。
+- 自然语言功能当前覆盖常见合并、清洗、去重、排序、拆分和汇总表述；
+  生成后必须先预览，再执行正式导出。
 - Excel 公式按 openpyxl/pandas 的读取结果处理，不执行宏。
 
 ## 开发、测试与构建
@@ -96,4 +121,3 @@ pyinstaller packaging\SheetFlow.spec --noconfirm --clean
 ## 许可证
 
 Apache License 2.0，见 [LICENSE](LICENSE)。
-

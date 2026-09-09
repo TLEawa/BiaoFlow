@@ -2,21 +2,23 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, cast
 
 import typer
 
 from sheetflow import __version__
+from sheetflow.assistant import suggest_operations
 from sheetflow.config import (
     InputConfig,
     OperationConfig,
     OutputConfig,
     WorkflowConfig,
     load_workflow,
+    save_workflow,
 )
 from sheetflow.exceptions import SheetFlowError
 from sheetflow.readers import inspect_table
-from sheetflow.service import run_workflow
+from sheetflow.service import resolve_inputs, run_workflow
 
 app = typer.Typer(help="SheetFlow：离线 Excel/CSV 自动化工具", no_args_is_help=True)
 
@@ -110,6 +112,41 @@ def merge(
         report = run_workflow(config)
         typer.echo(f"已输出：{report.output_paths[0]}（{report.rows} 行）")
     except SheetFlowError as exc:
+        _fail(exc)
+
+
+@app.command()
+def suggest(
+    source: Annotated[Path, typer.Argument(exists=True, help="用于识别列名的表格或目录")],
+    instruction: Annotated[str, typer.Argument(help="用中文描述处理需求")],
+    output: Annotated[Path, typer.Option("--output", "-o", help="工作流输出文件")] = Path(
+        "result.xlsx"
+    ),
+    save: Annotated[Path | None, typer.Option("--save", help="保存生成的 YAML 工作流")] = None,
+) -> None:
+    """在本地把中文需求转换为可复核的处理步骤。"""
+    try:
+        paths = resolve_inputs([str(source)])
+        if not paths:
+            raise ValueError("没有找到可读取的表格")
+        info = inspect_table(paths[0])
+        columns = cast(list[str], info["columns"])
+        suggestion = suggest_operations(instruction, columns)
+        for warning in suggestion.warnings:
+            typer.echo(f"提示：{warning}", err=True)
+        if not suggestion.operations:
+            raise ValueError("未生成可执行步骤")
+        config = WorkflowConfig(
+            version=1,
+            input=InputConfig(paths=[str(source)]),
+            operations=suggestion.operations,
+            output=OutputConfig(path=str(output)),
+        )
+        if save:
+            save_workflow(config, save)
+            typer.echo(f"已保存：{save}")
+        typer.echo(json.dumps(config.model_dump(exclude_none=True), ensure_ascii=False, indent=2))
+    except (SheetFlowError, ValueError) as exc:
         _fail(exc)
 
 

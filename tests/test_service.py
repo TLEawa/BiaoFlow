@@ -5,7 +5,7 @@ import pytest
 
 from sheetflow.config import InputConfig, OperationConfig, OutputConfig, WorkflowConfig
 from sheetflow.exceptions import TaskCancelled
-from sheetflow.service import run_workflow
+from sheetflow.service import preview_workflow, run_workflow
 
 
 def config(inputs: list[Path], output: Path, on_error: str = "stop") -> WorkflowConfig:
@@ -50,3 +50,23 @@ def test_split(tmp_path: Path) -> None:
     )
     report = run_workflow(workflow)
     assert {path.name for path in report.output_paths} == {"订单_华东.xlsx", "订单_华南.xlsx"}
+
+
+def test_preview_applies_operations_without_writing_output(tmp_path: Path) -> None:
+    source = tmp_path / "客户.csv"
+    source.write_text("手机号,姓名\n1, A \n1, A \n2,B\n", encoding="utf-8")
+    output = tmp_path / "不应生成.xlsx"
+    workflow = WorkflowConfig(
+        version=1,
+        input=InputConfig(paths=[str(source)]),
+        operations=[
+            OperationConfig(type="trim_text"),
+            OperationConfig(type="drop_duplicates", columns=["手机号"]),
+        ],
+        output=OutputConfig(path=str(output)),
+    )
+    report = preview_workflow(workflow)
+    assert report.before_rows == 3
+    assert report.after_rows == 2
+    assert report.frame["姓名"].tolist() == ["A", "B"]
+    assert not output.exists()

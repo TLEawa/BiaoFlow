@@ -24,6 +24,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from sheetflow.assistant import (
+    TEMPLATES,
+    WorkflowSuggestion,
+    suggest_operations,
+    template_operations,
+)
 from sheetflow.config import (
     InputConfig,
     OperationConfig,
@@ -34,7 +40,7 @@ from sheetflow.config import (
 )
 from sheetflow.exceptions import SheetFlowError
 from sheetflow.readers import read_table
-from sheetflow.service import TaskReport, run_workflow
+from sheetflow.service import TaskReport, preview_workflow, run_workflow
 
 PRESETS: dict[str, dict[str, object]] = {
     "合并文件": {"type": "merge", "add_source_column": True},
@@ -101,8 +107,8 @@ class Worker(QThread):
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("SheetFlow 0.1.0")
-        self.resize(960, 680)
+        self.setWindowTitle("SheetFlow 0.2.0")
+        self.resize(1040, 780)
         self.worker: Worker | None = None
         self.files = FileListWidget()
         self.operations = QListWidget()
@@ -116,6 +122,13 @@ class MainWindow(QMainWindow):
         self.output_path: str | None = None
         self.progress_bar = QProgressBar()
         self.status = QLabel("就绪")
+        self.instruction = QPlainTextEdit()
+        self.instruction.setPlaceholderText(
+            "例如：合并文件并保留来源，删除空行空列，按手机号去重，再按城市拆分"
+        )
+        self.instruction.setMaximumHeight(64)
+        self.template_combo = QComboBox()
+        self.template_combo.addItems(list(TEMPLATES))
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -134,6 +147,18 @@ class MainWindow(QMainWindow):
         layout.addLayout(file_buttons)
         layout.addWidget(self.files)
 
+        assistant_row = QHBoxLayout()
+        generate = QPushButton("从描述生成步骤")
+        apply_template = QPushButton("应用模板")
+        generate.clicked.connect(self.generate_operations)
+        apply_template.clicked.connect(self.apply_template)
+        assistant_row.addWidget(self.template_combo)
+        assistant_row.addWidget(apply_template)
+        assistant_row.addWidget(generate)
+        layout.addWidget(QLabel("2. 智能创建流程（本地解析，不上传表格）"))
+        layout.addWidget(self.instruction)
+        layout.addLayout(assistant_row)
+
         operation_row = QHBoxLayout()
         preset = QComboBox()
         preset.addItems(list(PRESETS))
@@ -149,7 +174,7 @@ class MainWindow(QMainWindow):
         self.operation_editor.textChanged.connect(self.update_operation)
         for widget in (preset, add_operation, remove_operation, up, down):
             operation_row.addWidget(widget)
-        layout.addWidget(QLabel("2. 处理步骤"))
+        layout.addWidget(QLabel("3. 处理步骤"))
         layout.addLayout(operation_row)
         layout.addWidget(self.operations)
         layout.addWidget(self.operation_editor)
@@ -169,7 +194,7 @@ class MainWindow(QMainWindow):
         cancel.clicked.connect(self.cancel_task)
         for button in (preview, choose_output, save, load, run, cancel):
             action_row.addWidget(button)
-        layout.addWidget(QLabel("3. 预览、输出与执行"))
+        layout.addWidget(QLabel("4. 预览、输出与执行"))
         layout.addLayout(action_row)
         layout.addWidget(self.output_label)
         layout.addWidget(self.preview)
@@ -189,6 +214,50 @@ class MainWindow(QMainWindow):
 
     def add_operation(self, label: str) -> None:
         self.operations.addItem(json.dumps(PRESETS[label], ensure_ascii=False))
+
+    def _available_columns(self) -> list[str]:
+        if self.files.count() == 0:
+            return []
+        source = Path(self.files.item(0).text())
+        if source.is_dir():
+            source = next(
+                (p for p in source.iterdir() if p.suffix.lower() in {".csv", ".xlsx"}),
+                source,
+            )
+        if not source.is_file():
+            return []
+        return [str(column) for column in read_table(source).columns]
+
+    def _set_suggestion(self, suggestion: WorkflowSuggestion) -> None:
+        operations = suggestion.operations
+        warnings = suggestion.warnings
+        if operations:
+            self.operations.clear()
+            for operation in operations:
+                self.operations.addItem(json.dumps(operation.model_dump(), ensure_ascii=False))
+        if warnings:
+            self.status.setText("；".join(warnings))
+        elif operations:
+            self.status.setText(f"已生成 {len(operations)} 个处理步骤，请预览后再执行")
+
+    def generate_operations(self) -> None:
+        try:
+            suggestion = suggest_operations(
+                self.instruction.toPlainText(), self._available_columns()
+            )
+            self._set_suggestion(suggestion)
+        except Exception as exc:
+            QMessageBox.warning(self, "生成失败", str(exc))
+
+    def apply_template(self) -> None:
+        try:
+            suggestion = template_operations(
+                self.template_combo.currentText(), self._available_columns()
+            )
+            self._set_suggestion(suggestion)
+            self.instruction.setPlainText(TEMPLATES[self.template_combo.currentText()].description)
+        except Exception as exc:
+            QMessageBox.warning(self, "无法应用模板", str(exc))
 
     def remove_operation(self) -> None:
         self.operations.takeItem(self.operations.currentRow())
@@ -219,10 +288,10 @@ class MainWindow(QMainWindow):
             self.output_path = path
             self.output_label.setText(path)
 
-    def build_config(self) -> WorkflowConfig:
+    def build_config(self, *, require_output: bool = True) -> WorkflowConfig:
         if self.files.count() == 0:
             raise ValueError("请先添加输入文件")
-        if not self.output_path:
+        if require_output and not self.output_path:
             raise ValueError("请选择输出文件")
         operations = [
             OperationConfig.model_validate_json(self.operations.item(i).text())
@@ -232,23 +301,25 @@ class MainWindow(QMainWindow):
             version=1,
             input=InputConfig(paths=[self.files.item(i).text() for i in range(self.files.count())]),
             operations=operations,
-            output=OutputConfig(path=self.output_path),
+            output=OutputConfig(path=self.output_path or "preview.xlsx"),
         )
 
     def load_preview(self) -> None:
         try:
-            if self.files.count() == 0:
-                raise ValueError("请先添加输入文件")
-            source = Path(self.files.item(0).text())
-            if source.is_dir():
-                source = next(p for p in source.iterdir() if p.suffix.lower() in {".csv", ".xlsx"})
-            frame = read_table(source).head(100)
+            report = preview_workflow(self.build_config(require_output=False))
+            frame = report.frame
             self.preview.setRowCount(len(frame))
             self.preview.setColumnCount(len(frame.columns))
             self.preview.setHorizontalHeaderLabels([str(c) for c in frame.columns])
             for row in range(len(frame)):
                 for column in range(len(frame.columns)):
                     self.preview.setItem(row, column, QTableWidgetItem(str(frame.iat[row, column])))
+            removed = report.before_rows - report.after_rows
+            changed_columns = len(report.after_columns) - len(report.before_columns)
+            self.status.setText(
+                f"预览完成：{report.before_rows} → {report.after_rows} 行"
+                f"（减少 {removed}），列数变化 {changed_columns:+d}"
+            )
         except Exception as exc:
             QMessageBox.warning(self, "预览失败", str(exc))
 
