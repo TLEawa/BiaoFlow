@@ -1,0 +1,17 @@
+version: 1
+input:
+  paths:
+    - ../sample_input
+  on_error: continue
+operations:
+  - type: merge
+    add_source_column: true
+  - type: drop_empty
+    axis: both
+  - type: trim_text
+  - type: drop_duplicates
+    columns:
+      - 订单号
+output:
+  path: ../../work/example_result.xlsx
+  overwrite: false

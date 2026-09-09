@@ -1,0 +1,11 @@
+version: 1
+input:
+  paths:
+    - ../sample_input
+operations:
+  - type: merge
+  - type: split_by
+    column: 地区
+output:
+  path: ../../work/orders.xlsx
+  overwrite: false

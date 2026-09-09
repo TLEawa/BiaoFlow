@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e ".[gui,dev]"
+      - run: ruff check .
+      - run: mypy src
+      - run: pytest
+
+  build:
+    runs-on: windows-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e ".[gui,build]"
+      - run: pyinstaller packaging/SheetFlow.spec --noconfirm --clean
+      - run: pyinstaller packaging/SheetFlowCLI.spec --noconfirm --clean
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SheetFlow-windows
+          path: |
+            dist/SheetFlow/
+            dist/sheetflow-cli/

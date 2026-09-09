@@ -1,0 +1,14 @@
+version: 1
+input:
+  paths:
+    - ../sample_input
+operations:
+  - type: merge
+  - type: group_summary
+    group_by:
+      - 地区
+    aggregations:
+      销售额: sum
+output:
+  path: ../../work/summary.csv
+  overwrite: false
