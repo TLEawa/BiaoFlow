@@ -137,7 +137,7 @@ class Worker(QThread):
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("表流 BiaoFlow 0.3.0 · 电商订单批处理")
+        self.setWindowTitle("表流 BiaoFlow 0.4.0 · 电商订单批处理")
         self.resize(1280, 860)
         self.setMinimumSize(980, 680)
         self.worker: Worker | None = None
