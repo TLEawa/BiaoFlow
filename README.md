@@ -1,8 +1,18 @@
 # SheetFlow
 
+[![最新版本](https://img.shields.io/github/v/release/TLEawa/SheetFlow?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=blue)](https://github.com/TLEawa/SheetFlow/releases/latest)
+[![自动测试](https://github.com/TLEawa/SheetFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/TLEawa/SheetFlow/actions/workflows/ci.yml)
+[![许可证](https://img.shields.io/github/license/TLEawa/SheetFlow)](LICENSE)
+
 SheetFlow 是一个离线优先的 Excel/CSV 自动化工具，面向需要重复合并、清洗、筛选和汇总表格的个人与小团队。
 
-> 当前版本：0.2.0。文件默认只在本机处理，不上传、不包含遥测。
+> **当前开源版本：v0.2.0。** 文件默认只在本机处理，不上传、不包含遥测。
+
+## 下载 Windows 版
+
+[下载 SheetFlow v0.2.0 Windows 便携版](https://github.com/TLEawa/SheetFlow/releases/download/v0.2.0/SheetFlow-0.2.0-windows.zip)
+
+下载后解压，运行 `gui\SheetFlow.exe`，无需安装 Python。旧版 `v0.1.0` 仅作为历史版本保留。
 
 ## 功能
 
