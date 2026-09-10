@@ -21,6 +21,7 @@ def test_main_window_builds_workflow(tmp_path) -> None:
     window.instruction.setPlainText("按编号去重")
     window.generate_operations()
     assert window.operations.count() == 1
-    assert '"type": "drop_duplicates"' in window.operations.item(0).text()
+    assert window.operations.item(0).text() == "删除重复行 · 编号"
+    assert window.build_config().operations[0].type == "drop_duplicates"
     window.close()
     application.processEvents()
