@@ -4,8 +4,16 @@ import json
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QThread, Signal
-from PySide6.QtGui import QColor, QDragEnterEvent, QDropEvent, QPainter, QPaintEvent, QPen
+from PySide6.QtCore import Qt, QThread, QUrl, Signal
+from PySide6.QtGui import (
+    QColor,
+    QDesktopServices,
+    QDragEnterEvent,
+    QDropEvent,
+    QPainter,
+    QPaintEvent,
+    QPen,
+)
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -598,11 +606,28 @@ class MainWindow(QMainWindow):
         self.status.setText(text)
 
     def task_completed(self, report: TaskReport) -> None:
-        outputs = "\n".join(str(path) for path in report.output_paths)
-        detail = f"输入文件：{report.input_count} 个\n最终订单：{report.rows} 行"
+        output_names = "\n".join(path.name for path in report.output_paths[:8])
+        if len(report.output_paths) > 8:
+            output_names += f"\n……另有 {len(report.output_paths) - 8} 个文件"
+        detail = (
+            f"输入文件：{report.input_count} 个\n"
+            f"原始数据：{report.before_rows:,} 行\n"
+            f"去重：{report.summary.get('duplicate_orders', 0):,} 行\n"
+            f"过滤无效订单：{report.summary.get('invalid_orders', 0):,} 行\n"
+            f"删除空订单：{report.summary.get('empty_orders', 0):,} 行\n"
+            f"最终订单：{report.rows:,} 行"
+        )
         if report.summary:
             detail += f"\n销售额：¥{report.summary.get('sales_amount', 0):,.2f}"
-        QMessageBox.information(self, "处理完成", f"处理完成\n\n{detail}\n\n生成文件：\n{outputs}")
+        message = QMessageBox(self)
+        message.setWindowTitle("处理完成")
+        message.setIcon(QMessageBox.Icon.Information)
+        message.setText(f"处理完成\n\n{detail}\n\n生成文件：\n{output_names}")
+        open_button = message.addButton("打开输出目录", QMessageBox.ButtonRole.ActionRole)
+        message.addButton(QMessageBox.StandardButton.Ok)
+        message.exec()
+        if message.clickedButton() is open_button and report.output_paths:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(report.output_paths[0].parent)))
 
 
 def main() -> None:

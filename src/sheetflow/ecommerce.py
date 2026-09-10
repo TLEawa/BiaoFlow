@@ -76,34 +76,59 @@ def run_ecommerce(config: WorkflowConfig, mapping: dict[str, str] | None = None)
     frames = []
     report = TaskReport(input_count=len(paths))
     for path in paths:
-        frame = normalize_frame(
-            read_table(
-                path,
-                sheet=config.input.sheet,
-                header=config.input.header,
-                encoding=config.input.encoding,
-                delimiter=config.input.delimiter,
-            ),
-            mapping or {},
+        frame = read_table(
+            path,
+            sheet=config.input.sheet,
+            header=config.input.header,
+            encoding=config.input.encoding,
+            delimiter=config.input.delimiter,
         )
+        detected = infer_mapping([str(column) for column in frame.columns])
+        selected = detected.copy()
+        selected.update(
+            {key: value for key, value in (mapping or {}).items() if value in frame.columns}
+        )
+        frame = normalize_frame(frame, selected)
         frame["来源文件"] = path.name
         frames.append(frame)
         report.success_count += 1
     raw = pd.concat(frames, ignore_index=True, sort=False)
     before = len(raw)
     raw = raw.dropna(how="all").copy()
+    after_empty = len(raw)
     raw = raw[raw["order_id"].notna() & raw["order_id"].astype(str).str.strip().ne("")]
+    empty_orders = after_empty - len(raw)
+    before_dedup = len(raw)
     raw = raw.drop_duplicates(subset=["order_id"], keep="first")
+    duplicate_orders = before_dedup - len(raw)
+    before_filter = len(raw)
     if "status" in raw.columns:
         invalid = {"已取消", "取消", "退款", "已退款", "作废"}
         raw = raw[~raw["status"].astype(str).str.strip().isin(invalid)]
+    invalid_orders = before_filter - len(raw)
     raw["quantity"] = pd.to_numeric(raw["quantity"], errors="coerce").fillna(0)
     raw["amount"] = pd.to_numeric(raw["amount"], errors="coerce").fillna(0)
-    summary = (
-        raw.groupby("shop_name", dropna=False)
-        .agg(订单数=("order_id", "nunique"), 商品数量=("quantity", "sum"), 销售额=("amount", "sum"))
-        .reset_index()
-    )
+    summaries = []
+    for column, label in (
+        ("shop_name", "店铺"),
+        ("product_name", "商品"),
+        ("province", "地区"),
+    ):
+        if column not in raw.columns:
+            continue
+        part = (
+            raw.groupby(column, dropna=False)
+            .agg(
+                订单数=("order_id", "nunique"),
+                商品数量=("quantity", "sum"),
+                销售额=("amount", "sum"),
+            )
+            .reset_index()
+        )
+        part.insert(0, "汇总维度", label)
+        part = part.rename(columns={column: "分组名称"})
+        summaries.append(part)
+    summary = pd.concat(summaries, ignore_index=True)
     output = Path(config.output.path)
     output.parent.mkdir(parents=True, exist_ok=True)
     report.output_paths.append(export_table(raw, config.output, output))
@@ -121,8 +146,29 @@ def run_ecommerce(config: WorkflowConfig, mapping: dict[str, str] | None = None)
                 OutputConfig(path=str(split_dir / f"{safe}.xlsx"), format="xlsx", overwrite=True),
             )
         )
+    if "province" in raw.columns:
+        region_dir = output.parent / "按地区拆分"
+        region_dir.mkdir(parents=True, exist_ok=True)
+        for value, part in raw.groupby("province", dropna=False):
+            safe = re.sub(r'[<>:"/\\|?*]+', "_", str(value))[:60] or "空值"
+            report.output_paths.append(
+                export_table(
+                    part.reset_index(drop=True),
+                    OutputConfig(
+                        path=str(region_dir / f"{safe}.xlsx"),
+                        format="xlsx",
+                        overwrite=True,
+                    ),
+                )
+            )
     report.rows = len(raw)
     report.before_rows = before
     report.removed_rows = before - len(raw)
-    report.summary = {"sales_amount": float(raw["amount"].sum()), "summary_rows": len(summary)}
+    report.summary = {
+        "sales_amount": float(raw["amount"].sum()),
+        "summary_rows": len(summary),
+        "empty_orders": empty_orders,
+        "duplicate_orders": duplicate_orders,
+        "invalid_orders": invalid_orders,
+    }
     return report

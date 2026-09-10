@@ -38,3 +38,30 @@ def test_ecommerce_outputs(tmp_path: Path):
     assert report.rows == 1
     assert (tmp_path / "订单汇总.xlsx").exists()
     assert (tmp_path / "按店铺拆分" / "甲.xlsx").exists()
+
+
+def test_mixed_files_use_individual_field_mapping(tmp_path: Path):
+    csv_path = tmp_path / "中文订单.csv"
+    xlsx_path = tmp_path / "另一平台.xlsx"
+    pd.DataFrame(
+        {"订单号": ["A1"], "店铺": ["甲"], "数量": [1], "金额": [10], "省份": ["广东"]}
+    ).to_csv(csv_path, index=False, encoding="utf-8-sig")
+    pd.DataFrame(
+        {
+            "交易编号": ["B1"],
+            "店铺名称": ["乙"],
+            "商品数量": [2],
+            "销售额": [30],
+            "省": ["浙江"],
+        }
+    ).to_excel(xlsx_path, index=False)
+    cfg = WorkflowConfig(
+        version=1,
+        input=InputConfig(paths=[str(csv_path), str(xlsx_path)]),
+        operations=[OperationConfig(type="ecommerce_workflow")],
+        output=OutputConfig(path=str(tmp_path / "全部订单.xlsx"), overwrite=True),
+    )
+    report = run_ecommerce(cfg)
+    assert report.rows == 2
+    assert (tmp_path / "按地区拆分" / "广东.xlsx").exists()
+    assert (tmp_path / "按地区拆分" / "浙江.xlsx").exists()

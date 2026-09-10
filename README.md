@@ -10,27 +10,27 @@ BiaoFlow 是一个本地运行的 Excel / CSV 自动化工作流工具，专为�
 
 ## 电商订单整理
 
-打开 SheetFlow，选择「电商订单整理」，拖入订单文件并点击开始处理。程序会自动完成合并、来源追踪、字段映射、去重、过滤无效订单、汇总和按店铺拆分，生成 `全部订单.xlsx`、`订单汇总.xlsx` 与拆分目录。
+打开 BiaoFlow，选择「电商订单整理」，拖入订单文件并点击开始处理。程序会自动完成合并、来源追踪、字段映射、去重、过滤无效订单、汇总和按店铺拆分，生成 `全部订单.xlsx`、`订单汇总.xlsx` 与拆分目录。
 
 示例数据位于 [`examples/ecommerce/`](examples/ecommerce/)，全部为虚构内容。
 
-[![最新版本](https://img.shields.io/github/v/release/TLEawa/SheetFlow?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=blue)](https://github.com/TLEawa/SheetFlow/releases/latest)
-[![自动测试](https://github.com/TLEawa/SheetFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/TLEawa/SheetFlow/actions/workflows/ci.yml)
-[![许可证](https://img.shields.io/github/license/TLEawa/SheetFlow)](LICENSE)
+[![最新版本](https://img.shields.io/github/v/release/TLEawa/BiaoFlow?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=blue)](https://github.com/TLEawa/BiaoFlow/releases/latest)
+[![自动测试](https://github.com/TLEawa/BiaoFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/TLEawa/BiaoFlow/actions/workflows/ci.yml)
+[![许可证](https://img.shields.io/github/license/TLEawa/BiaoFlow)](LICENSE)
 
-SheetFlow 是一个离线优先的电商订单批处理工具。它把淘宝、拼多多、抖店等平台导出的多份订单表，整理成可直接发货、对账和统计的结果表。
+BiaoFlow 是一个离线优先的电商订单批处理工具。它把淘宝、拼多多、抖店等平台导出的多份订单表，整理成可直接发货、对账和统计的结果表。
 
 > **当前开源版本：v0.3.0。** 文件默认只在本机处理，不上传、不包含遥测。
 
 ## 下载 Windows 版
 
-[下载 SheetFlow v0.3.0 Windows 便携版](https://github.com/TLEawa/SheetFlow/releases/download/v0.3.0/SheetFlow-0.3.0-windows.zip)
+[下载 BiaoFlow v0.3.0 Windows 便携版](https://github.com/TLEawa/BiaoFlow/releases/download/v0.3.0/BiaoFlow-0.3.0-windows.zip)
 
-下载后解压，运行 `gui\SheetFlow.exe`，无需安装 Python。旧版 `v0.1.0` 仅作为历史版本保留。
+下载后解压，运行 `gui\BiaoFlow.exe`，无需安装 Python。旧版 `v0.1.0` 仅作为历史版本保留。
 
 ## 先解决一个具体问题：订单表太多
 
-把一周的订单文件拖进来，选择“电商订单整理”，SheetFlow 会按订单号去重、清理空白、保留来源，并输出一份合并结果。需要发货时，还可以按省份或店铺拆分文件。
+把一周的订单文件拖进来，选择“电商订单整理”，BiaoFlow 会按订单号去重、清理空白、保留来源，并输出一份合并结果。需要发货时，还可以按省份或店铺拆分文件。
 
 ## 功能
 
@@ -62,7 +62,7 @@ python -m venv .venv
 .\.venv\Scripts\sheetflow-gui.exe
 ```
 
-Windows 发行包用户可直接运行 `SheetFlow.exe`，无需安装 Python。
+Windows 发行包用户可直接运行 `BiaoFlow.exe`，无需安装 Python。
 
 ## 用一句话创建流程
 
@@ -70,7 +70,7 @@ GUI 中先添加文件，再输入：
 
 > 合并文件并保留来源，按手机号去重，再按城市拆分
 
-点击“从描述生成步骤”后，SheetFlow 会依据实际列名生成可编辑步骤。
+点击“从描述生成步骤”后，BiaoFlow 会依据实际列名生成可编辑步骤。
 未能确定的列会明确提示，不会猜测。点击“预览前 100 行”可以在写文件前
 查看真实处理结果。
 
@@ -120,7 +120,7 @@ output:
 
 ## 数据安全与已知限制
 
-- SheetFlow 不修改输入文件，输出先写临时文件，成功后再放入目标路径。
+- BiaoFlow 不修改输入文件，输出先写临时文件，成功后再放入目标路径。
 - 默认不联网；日志不会记录完整表格内容。
 - 当前支持 `.csv` 和 `.xlsx`，暂不支持旧式 `.xls`、密码文件、VBA、图表编辑和云端协作。
 - 大文件受本机可用内存限制；GUI 预览最多显示 100 行。
@@ -135,7 +135,7 @@ python -m pip install -e ".[gui,dev,build]"
 pytest
 ruff check .
 mypy src
-pyinstaller packaging\SheetFlow.spec --noconfirm --clean
+pyinstaller packaging\BiaoFlow.spec --noconfirm --clean
 ```
 
 问题与功能建议请使用 GitHub Issues。安全问题请不要公开附带真实数据，可先建立不含敏感信息的最小复现。
