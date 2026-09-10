@@ -125,7 +125,7 @@ class Worker(QThread):
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("SheetFlow 0.2.0")
+        self.setWindowTitle("SheetFlow 0.2.1")
         self.resize(1280, 860)
         self.setMinimumSize(980, 680)
         self.worker: Worker | None = None

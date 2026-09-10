@@ -17,7 +17,7 @@ def test_main_window_builds_workflow(tmp_path) -> None:
     window.add_operation("清理文本空格")
     config = window.build_config()
     assert config.operations[0].type == "trim_text"
-    assert window.windowTitle() == "SheetFlow 0.2.0"
+    assert window.windowTitle() == "SheetFlow 0.2.1"
     window.instruction.setPlainText("按编号去重")
     window.generate_operations()
     assert window.operations.count() == 1
