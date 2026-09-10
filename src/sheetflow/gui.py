@@ -125,7 +125,7 @@ class Worker(QThread):
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("SheetFlow 0.2.1")
+        self.setWindowTitle("SheetFlow 0.3.0 · 电商订单批处理")
         self.resize(1280, 860)
         self.setMinimumSize(980, 680)
         self.worker: Worker | None = None
@@ -215,10 +215,10 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(root)
         layout.setContentsMargins(24, 20, 24, 16)
         layout.setSpacing(14)
-        title = QLabel("SheetFlow  ·  表格自动化")
+        title = QLabel("SheetFlow  ·  电商订单批处理")
         title.setStyleSheet("font-size: 25px; font-weight: 700; color: #152945;")
         layout.addWidget(title)
-        subtitle = QLabel("导入表格 → 设置处理步骤 → 预览并导出    ·    本地处理，数据不上传")
+        subtitle = QLabel("订单文件 → 自动整理 → 预览发货表 → 导出    ·    本地处理，数据不上传")
         subtitle.setStyleSheet("color: #64748b;")
         layout.addWidget(subtitle)
         splitter = QSplitter(Qt.Orientation.Horizontal)

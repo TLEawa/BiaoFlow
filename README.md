@@ -4,15 +4,19 @@
 [![自动测试](https://github.com/TLEawa/SheetFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/TLEawa/SheetFlow/actions/workflows/ci.yml)
 [![许可证](https://img.shields.io/github/license/TLEawa/SheetFlow)](LICENSE)
 
-SheetFlow 是一个离线优先的 Excel/CSV 自动化工具，面向需要重复合并、清洗、筛选和汇总表格的个人与小团队。
+SheetFlow 是一个离线优先的电商订单批处理工具。它把淘宝、拼多多、抖店等平台导出的多份订单表，整理成可直接发货、对账和统计的结果表。
 
-> **当前开源版本：v0.2.1。** 文件默认只在本机处理，不上传、不包含遥测。
+> **当前开源版本：v0.3.0。** 文件默认只在本机处理，不上传、不包含遥测。
 
 ## 下载 Windows 版
 
-[下载 SheetFlow v0.2.1 Windows 便携版](https://github.com/TLEawa/SheetFlow/releases/download/v0.2.1/SheetFlow-0.2.1-windows.zip)
+[下载 SheetFlow v0.3.0 Windows 便携版](https://github.com/TLEawa/SheetFlow/releases/download/v0.3.0/SheetFlow-0.3.0-windows.zip)
 
 下载后解压，运行 `gui\SheetFlow.exe`，无需安装 Python。旧版 `v0.1.0` 仅作为历史版本保留。
+
+## 先解决一个具体问题：订单表太多
+
+把一周的订单文件拖进来，选择“电商订单整理”，SheetFlow 会按订单号去重、清理空白、保留来源，并输出一份合并结果。需要发货时，还可以按省份或店铺拆分文件。
 
 ## 功能
 

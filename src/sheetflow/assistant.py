@@ -20,13 +20,13 @@ class WorkflowTemplate:
 
 
 TEMPLATES: dict[str, WorkflowTemplate] = {
+    "电商订单整理": WorkflowTemplate(
+        name="电商订单整理",
+        description="合并订单、保留来源、清理空白并按订单号去重，再按省份拆分发货表。",
+    ),
     "通用表格清洗": WorkflowTemplate(
         name="通用表格清洗",
         description="合并文件、删除空行空列、清理文本空格并去重。",
-    ),
-    "电商订单整理": WorkflowTemplate(
-        name="电商订单整理",
-        description="合并订单、保留来源、清理空格并按订单号去重。",
     ),
     "客户名单去重": WorkflowTemplate(
         name="客户名单去重",

@@ -16,7 +16,7 @@ jobs:
       - run: ruff check .
       - run: mypy src
       - run: pytest
-      - run: python -c "import sheetflow; assert sheetflow.__version__ == '0.2.1'"
+      - run: python -c "import sheetflow; assert sheetflow.__version__ == '0.3.0'"
 
   build:
     runs-on: windows-latest
