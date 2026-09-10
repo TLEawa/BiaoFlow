@@ -22,7 +22,7 @@ class WorkflowTemplate:
 TEMPLATES: dict[str, WorkflowTemplate] = {
     "电商订单整理": WorkflowTemplate(
         name="电商订单整理",
-        description="合并订单、保留来源、清理空白并按订单号去重，再按省份拆分发货表。",
+        description="① 导入订单  ② 合并文件  ③ 去除重复订单  ④ 筛选有效订单  ⑤ 数据汇总  ⑥ 按店铺拆分  ⑦ 导出结果",
     ),
     "通用表格清洗": WorkflowTemplate(
         name="通用表格清洗",

@@ -1,4 +1,18 @@
-# SheetFlow
+# 表流 BiaoFlow
+
+重复的 Excel 工作，一次配置，以后一键完成。
+
+BiaoFlow 是一个本地运行的 Excel / CSV 自动化工作流工具，专为中文办公场景设计。文件不上传、不需要 API Key，第一次配置流程后即可反复执行。
+
+适合：电商订单整理、批量 Excel 合并、去重与筛选、数据汇总、按字段拆分、重复报表处理。
+
+✅ 文件不上传　✅ 免费开源　✅ Windows GUI　✅ Workflow 可重复执行
+
+## 电商订单整理
+
+打开 SheetFlow，选择「电商订单整理」，拖入订单文件并点击开始处理。程序会自动完成合并、来源追踪、字段映射、去重、过滤无效订单、汇总和按店铺拆分，生成 `全部订单.xlsx`、`订单汇总.xlsx` 与拆分目录。
+
+示例数据位于 [`examples/ecommerce/`](examples/ecommerce/)，全部为虚构内容。
 
 [![最新版本](https://img.shields.io/github/v/release/TLEawa/SheetFlow?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=blue)](https://github.com/TLEawa/SheetFlow/releases/latest)
 [![自动测试](https://github.com/TLEawa/SheetFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/TLEawa/SheetFlow/actions/workflows/ci.yml)

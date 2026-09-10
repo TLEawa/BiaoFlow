@@ -47,6 +47,7 @@ from sheetflow.config import (
 from sheetflow.exceptions import SheetFlowError
 from sheetflow.readers import read_table
 from sheetflow.service import TaskReport, preview_workflow, run_workflow
+from sheetflow.ecommerce import run_ecommerce
 
 PRESETS: dict[str, dict[str, object]] = {
     "合并文件": {"type": "merge", "add_source_column": True},
@@ -112,11 +113,10 @@ class Worker(QThread):
 
     def run(self) -> None:
         try:
-            report = run_workflow(
-                self.config,
-                progress=lambda value, text: self.progress.emit(value, text),
-                cancelled=lambda: self.cancel_requested,
-            )
+            if self.config.operations and self.config.operations[0].type == "ecommerce_workflow":
+                report = run_ecommerce(self.config)
+            else:
+                report = run_workflow(self.config, progress=lambda value, text: self.progress.emit(value, text), cancelled=lambda: self.cancel_requested)
             self.completed.emit(report)
         except Exception as exc:
             self.failed.emit(str(exc))
@@ -125,7 +125,7 @@ class Worker(QThread):
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("SheetFlow 0.3.0 · 电商订单批处理")
+        self.setWindowTitle("表流 BiaoFlow 0.3.0 · 电商订单批处理")
         self.resize(1280, 860)
         self.setMinimumSize(980, 680)
         self.worker: Worker | None = None
@@ -139,6 +139,7 @@ class MainWindow(QMainWindow):
         self.preview = QTableWidget()
         self.output_label = QLabel("尚未选择输出文件")
         self.output_path: str | None = None
+        self.ecommerce_mode = False
         self.progress_bar = QProgressBar()
         self.status = QLabel("就绪")
         self.instruction = QPlainTextEdit()
@@ -215,7 +216,7 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(root)
         layout.setContentsMargins(24, 20, 24, 16)
         layout.setSpacing(14)
-        title = QLabel("SheetFlow  ·  电商订单批处理")
+        title = QLabel("表流 BiaoFlow  ·  电商订单批处理")
         title.setStyleSheet("font-size: 25px; font-weight: 700; color: #152945;")
         layout.addWidget(title)
         subtitle = QLabel("订单文件 → 自动整理 → 预览发货表 → 导出    ·    本地处理，数据不上传")
@@ -439,6 +440,13 @@ class MainWindow(QMainWindow):
             )
             self._set_suggestion(suggestion)
             self.instruction.setPlainText(TEMPLATES[self.template_combo.currentText()].description)
+            if self.template_combo.currentText() == "电商订单整理":
+                self.ecommerce_mode = True
+                self.operations.clear()
+                self.append_operation(json.dumps({"type": "ecommerce_workflow"}, ensure_ascii=False))
+                self.status.setText("已应用电商订单整理：添加文件后即可开始处理")
+            else:
+                self.ecommerce_mode = False
         except Exception as exc:
             QMessageBox.warning(self, "无法应用模板", str(exc))
 
@@ -484,11 +492,17 @@ class MainWindow(QMainWindow):
             )
             for i in range(self.operations.count())
         ]
+        mapping = {}
+        if self.ecommerce_mode and self.files.count():
+            from sheetflow.ecommerce import infer_mapping
+            sample = read_table(self.files.item(0).text())
+            mapping = infer_mapping([str(c) for c in sample.columns])
         return WorkflowConfig(
             version=1,
             input=InputConfig(paths=[self.files.item(i).text() for i in range(self.files.count())]),
             operations=operations,
             output=OutputConfig(path=self.output_path or "preview.xlsx"),
+            mapping=mapping,
         )
 
     def load_preview(self) -> None:
@@ -578,7 +592,10 @@ class MainWindow(QMainWindow):
 
     def task_completed(self, report: TaskReport) -> None:
         outputs = "\n".join(str(path) for path in report.output_paths)
-        QMessageBox.information(self, "处理完成", f"已生成：\n{outputs}\n共 {report.rows} 行")
+        detail = f"输入文件：{report.input_count} 个\n最终订单：{report.rows} 行"
+        if report.summary:
+            detail += f"\n销售额：¥{report.summary.get('sales_amount', 0):,.2f}"
+        QMessageBox.information(self, "处理完成", f"处理完成\n\n{detail}\n\n生成文件：\n{outputs}")
 
 
 def main() -> None:

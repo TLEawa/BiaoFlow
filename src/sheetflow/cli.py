@@ -20,7 +20,7 @@ from sheetflow.exceptions import SheetFlowError
 from sheetflow.readers import inspect_table
 from sheetflow.service import resolve_inputs, run_workflow
 
-app = typer.Typer(help="SheetFlow：离线 Excel/CSV 自动化工具", no_args_is_help=True)
+app = typer.Typer(help="表流 BiaoFlow：本地 Excel/CSV 自动化工作流工具", no_args_is_help=True)
 
 
 def _version_callback(value: bool) -> None:

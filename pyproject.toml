@@ -9,7 +9,7 @@ description = "离线优先的 Excel/CSV 自动化工具"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "Apache-2.0"}
-authors = [{name = "SheetFlow Contributors"}]
+authors = [{name = "BiaoFlow Contributors"}]
 dependencies = [
   "pandas>=2.1,<3",
   "openpyxl>=3.1,<4",
@@ -25,7 +25,9 @@ build = ["PyInstaller>=6.10,<7"]
 
 [project.scripts]
 sheetflow = "sheetflow.cli:app"
+biaoflow = "sheetflow.cli:app"
 sheetflow-gui = "sheetflow.gui:main"
+biaoflow-gui = "sheetflow.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

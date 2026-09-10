@@ -51,6 +51,7 @@ class WorkflowConfig(BaseModel):
     input: InputConfig
     operations: list[OperationConfig] = Field(default_factory=list)
     output: OutputConfig
+    mapping: dict[str, str] = Field(default_factory=dict)
 
 
 def load_workflow(path: str | Path) -> WorkflowConfig:

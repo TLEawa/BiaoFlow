@@ -19,7 +19,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="sheetflow",
+    name="biaoflow",
     console=True,
 )
-coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=True, name="sheetflow-cli")
+coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=True, name="biaoflow-cli")

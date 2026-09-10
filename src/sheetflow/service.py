@@ -28,6 +28,9 @@ class TaskReport:
     rows: int = 0
     elapsed_seconds: float = 0.0
     failures: list[dict[str, str]] = field(default_factory=list)
+    before_rows: int = 0
+    removed_rows: int = 0
+    summary: dict[str, object] = field(default_factory=dict)
 
     @property
     def partial_failure(self) -> bool:

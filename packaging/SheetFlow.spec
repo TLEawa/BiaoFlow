@@ -14,5 +14,5 @@ a.binaries = [
     if os.path.basename(item[0]).lower() not in {"icuuc.dll", "icudt78.dll"}
 ]
 pyz = PYZ(a.pure)
-exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name="SheetFlow", console=False)
-coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=True, name="SheetFlow")
+exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name="BiaoFlow", console=False)
+coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=True, name="BiaoFlow")
