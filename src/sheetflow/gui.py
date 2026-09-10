@@ -44,10 +44,10 @@ from sheetflow.config import (
     load_workflow,
     save_workflow,
 )
+from sheetflow.ecommerce import run_ecommerce
 from sheetflow.exceptions import SheetFlowError
 from sheetflow.readers import read_table
 from sheetflow.service import TaskReport, preview_workflow, run_workflow
-from sheetflow.ecommerce import run_ecommerce
 
 PRESETS: dict[str, dict[str, object]] = {
     "合并文件": {"type": "merge", "add_source_column": True},
@@ -116,7 +116,11 @@ class Worker(QThread):
             if self.config.operations and self.config.operations[0].type == "ecommerce_workflow":
                 report = run_ecommerce(self.config)
             else:
-                report = run_workflow(self.config, progress=lambda value, text: self.progress.emit(value, text), cancelled=lambda: self.cancel_requested)
+                report = run_workflow(
+                    self.config,
+                    progress=lambda value, text: self.progress.emit(value, text),
+                    cancelled=lambda: self.cancel_requested,
+                )
             self.completed.emit(report)
         except Exception as exc:
             self.failed.emit(str(exc))
@@ -443,7 +447,9 @@ class MainWindow(QMainWindow):
             if self.template_combo.currentText() == "电商订单整理":
                 self.ecommerce_mode = True
                 self.operations.clear()
-                self.append_operation(json.dumps({"type": "ecommerce_workflow"}, ensure_ascii=False))
+                self.append_operation(
+                    json.dumps({"type": "ecommerce_workflow"}, ensure_ascii=False)
+                )
                 self.status.setText("已应用电商订单整理：添加文件后即可开始处理")
             else:
                 self.ecommerce_mode = False
@@ -495,6 +501,7 @@ class MainWindow(QMainWindow):
         mapping = {}
         if self.ecommerce_mode and self.files.count():
             from sheetflow.ecommerce import infer_mapping
+
             sample = read_table(self.files.item(0).text())
             mapping = infer_mapping([str(c) for c in sample.columns])
         return WorkflowConfig(
