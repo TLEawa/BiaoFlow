@@ -1,4 +1,4 @@
-name: SheetFlow v0.2 CI
+name: BiaoFlow CI
 
 on:
   push:
@@ -31,7 +31,7 @@ jobs:
       - run: pyinstaller packaging/SheetFlowCLI.spec --noconfirm --clean
       - uses: actions/upload-artifact@v4
         with:
-          name: SheetFlow-windows
+          name: BiaoFlow-windows
           path: |
-            dist/SheetFlow/
-            dist/sheetflow-cli/
+            dist/BiaoFlow/
+            dist/biaoflow-cli/

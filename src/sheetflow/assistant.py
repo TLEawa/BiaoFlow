@@ -22,7 +22,10 @@ class WorkflowTemplate:
 TEMPLATES: dict[str, WorkflowTemplate] = {
     "电商订单整理": WorkflowTemplate(
         name="电商订单整理",
-        description="① 导入订单  ② 合并文件  ③ 去除重复订单  ④ 筛选有效订单  ⑤ 数据汇总  ⑥ 按店铺拆分  ⑦ 导出结果",
+        description=(
+            "① 导入订单  ② 合并文件  ③ 去除重复订单  ④ 筛选有效订单 "
+            "⑤ 数据汇总  ⑥ 按店铺拆分  ⑦ 导出结果"
+        ),
     ),
     "通用表格清洗": WorkflowTemplate(
         name="通用表格清洗",
@@ -107,9 +110,7 @@ def suggest_operations(instruction: str, columns: list[str] | None = None) -> Wo
     return result
 
 
-def _parse_clause(
-    clause: str, columns: list[str], warnings: list[str]
-) -> dict[str, Any] | None:
+def _parse_clause(clause: str, columns: list[str], warnings: list[str]) -> dict[str, Any] | None:
     if "合并" in clause:
         return {
             "type": "merge",
